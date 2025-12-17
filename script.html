@@ -1,0 +1,176 @@
+<!-- ---------- script.html ---------- -->
+<script>
+  // get logo image
+  google.script.run.withSuccessHandler(function(base64Image){
+    document.getElementById('logo').src = base64Image;
+  }).getLogoAsBase64();
+
+  // local master data
+  let master = [];
+
+  // initialize
+  document.addEventListener("DOMContentLoaded", () => {
+    // set today's date
+    document.getElementById("date").valueAsDate = new Date();
+
+    // get master data then init dropdowns
+    google.script.run.withSuccessHandler(data => {
+      master = data || [];
+      initDropdowns();
+    }).getMasterData();
+
+    // detect shift and set hidden field
+    google.script.run.withSuccessHandler(shiftVal => {
+      document.getElementById("shift").value = shiftVal || "";
+    }).detectShift();
+  });
+
+  function initDropdowns() {
+    // populate supervisor datalist
+    const supSet = [...new Set(master.map(r => r[7]).filter(x => x))];
+    const supList = document.getElementById("supervisorList");
+    supList.innerHTML = "";
+    supSet.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      supList.appendChild(opt);
+    });
+
+    // populate cell dropdown (column index 1)
+    const cells = [...new Set(master.map(r => r[1]).filter(x => x))];
+    fillDropdown("cell", cells);
+
+    document.getElementById("tableArea").innerHTML = "";
+
+    document.getElementById("cell").addEventListener("change", onCellChange);
+  }
+
+  function fillDropdown(id, values) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = `<option value="">Select</option>`;
+    values.forEach(v => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      sel.appendChild(o);
+    });
+  }
+
+  function onCellChange() {
+    const c = document.getElementById("cell").value;
+    if (!c) {
+      document.getElementById("tableArea").innerHTML = "";
+      return;
+    }
+    loadItems(c);
+  }
+
+  function lockDropdowns() {
+    ["date", "supervisor", "cell"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.disabled = true; el.classList.add("disabled-box"); }
+    });
+  }
+
+  function unlockDropdowns() {
+    ["date", "supervisor", "cell"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.disabled = false; el.classList.remove("disabled-box"); }
+    });
+  }
+
+  function loadItems(cell) {
+    const items = master.filter(r => r[1] === cell);
+
+    const tableArea = document.getElementById("tableArea");
+    if (!items || items.length === 0) {
+      tableArea.innerHTML = "<p>No Records Found</p>";
+      return;
+    }
+
+    lockDropdowns();
+
+    let html = `<table>
+      <tr>
+        <th>Cell</th>
+        <th>Dept</th>
+        <th>Plan</th>
+        <th>Actual</th>
+        <th>Gap</th>
+        <th>Remarks</th>
+      </tr>`;
+
+    items.forEach((r, i) => {
+      const dept = r[2] || "";
+      html += `<tr>
+        <td>${escapeHtml(r[1]||"")}</td>
+        <td>${escapeHtml(dept)}</td>
+        <td><input class="small-input" id="p${i}" oninput="calc(${i})" /></td>
+        <td><input class="small-input" id="a${i}" oninput="calc(${i})" /></td>
+        <td id="g${i}">0</td>
+        <td><input class="small-input" id="r${i}" /></td>
+      </tr>`;
+    });
+
+    html += `</table>
+      <button class="btn save-btn" onclick="save(${items.length})">Save</button>`;
+
+    tableArea.innerHTML = html;
+  }
+
+  function calc(i) {
+    const p = Number(document.getElementById("p" + i).value || 0);
+    const a = Number(document.getElementById("a" + i).value || 0);
+    document.getElementById("g" + i).innerText = (p - a);
+  }
+
+  function save(count) {
+    const d = document.getElementById("date").value || "";
+    const sh = document.getElementById("shift").value || "";
+    const sup = document.getElementById("supervisor").value || "";
+    const c = document.getElementById("cell").value || "";
+
+    const filtered = master.filter(r => r[1] === c);
+
+    let rows = [];
+    for (let i = 0; i < count; i++) {
+      const plan = document.getElementById("p" + i).value || "";
+      const act = document.getElementById("a" + i).value || "";
+      const dept = filtered[i]?.[2] || "";
+      const gap = Number(plan || 0) - Number(act || 0);
+      const remarks = document.getElementById("r" + i).value || "";
+
+      // updated reference format (unit removed)
+      const ref = `${d}-${sh}-${c}-${dept}`;
+
+      rows.push([d, sh, sup, c, dept, plan, act, gap, remarks, ref]);
+    }
+
+    google.script.run.withSuccessHandler(() => {
+      resetForm();
+    }).saveToDB(rows);
+  }
+
+  function resetForm() {
+    document.getElementById("date").valueAsDate = new Date();
+    google.script.run.withSuccessHandler(shiftVal => {
+      document.getElementById("shift").value = shiftVal || "";
+    }).detectShift();
+
+    document.getElementById("supervisor").value = "";
+    document.getElementById("cell").value = "";
+    document.getElementById("tableArea").innerHTML = "";
+    unlockDropdowns();
+  }
+
+  function escapeHtml(text) {
+    if (!text) return "";
+    return text.toString().replace(/[&<>"'`=\/]/g, s => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',
+      "'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'
+    })[s]);
+  }
+
+  window.calc = calc;
+  window.save = save;
+</script>
