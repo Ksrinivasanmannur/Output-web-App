@@ -1,0 +1,55 @@
+<!-- ---------- index.html ---------- -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('style'); ?>
+  </head>
+<body>
+
+  <div style="text-align:center; margin-top:10px;">
+    <div class="logo-container text-center">
+      <img id="logo" alt="Loading logo..." width="200" height="80">
+    </div>
+  </div>
+
+  <div class="container">
+    <h2 class="title">👷‍♂️ Output Plan Vs Actual</h2>
+
+<div class="card">
+  <label>Date</label>
+  <input type="date" id="date" class="input cute" required />
+
+  <label>Shift</label>
+  <select id="shift" class="input cute" required>
+    <option value="">Select</option>
+    <option>Shift1</option>
+    <option>Shift2</option>
+    <option>Shift3</option>
+  </select>
+
+  <label>Supervisor Name</label>
+  <input
+    list="supervisorList"
+    id="supervisor"
+    class="input searchable"
+    placeholder="Type to search supervisor..."
+    required
+  />
+  <datalist id="supervisorList"></datalist>
+
+  <label>Cell</label>
+  <select id="cell" class="input cute" required></select>
+</div>
+
+
+    <div id="tableArea"></div>
+  </div>
+
+  <div class="footer">
+    Powered By: <b>DTVS-IT TEAM</b>
+  </div>
+
+  <?!= include('script'); ?>
+</body>
+</html>
