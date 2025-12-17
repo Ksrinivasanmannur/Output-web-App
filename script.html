@@ -171,6 +171,19 @@
     })[s]);
   }
 
+  function validateMandatoryFields() {
+  const date = document.getElementById("date").value;
+  const shift = document.getElementById("shift").value;
+  const sup = document.getElementById("supervisor").value;
+  const cell = document.getElementById("cell").value;
+
+  if (!date || !shift || !sup || !cell) {
+    alert("⚠️ Please select Date, Shift, Supervisor Name and Cell");
+    return false;
+  }
+  return true;
+}
+
   window.calc = calc;
   window.save = save;
 </script>
