@@ -175,16 +175,16 @@ function onCellChange() {
     })[s]);
   }
 
-  function clearForm() {
+function clearForm() {
   // reset date
   document.getElementById("date").valueAsDate = new Date();
 
-  // re-detect shift
+  // re-detect shift (no checks)
   google.script.run.withSuccessHandler(shiftVal => {
     document.getElementById("shift").value = shiftVal || "";
   }).detectShift();
 
-  // clear supervisor & cell
+  // clear optional fields
   document.getElementById("supervisor").value = "";
   document.getElementById("cell").value = "";
 
