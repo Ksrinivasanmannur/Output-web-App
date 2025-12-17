@@ -56,14 +56,16 @@
     });
   }
 
-  function onCellChange() {
-    const c = document.getElementById("cell").value;
-    if (!c) {
-      document.getElementById("tableArea").innerHTML = "";
-      return;
-    }
-    loadItems(c);
+function onCellChange() {
+  if (!validateMandatoryFields()) {
+    document.getElementById("cell").value = "";
+    document.getElementById("tableArea").innerHTML = "";
+    return;
   }
+
+  const c = document.getElementById("cell").value;
+  loadItems(c);
+}
 
   function lockDropdowns() {
     ["date", "supervisor", "cell"].forEach(id => {
@@ -125,6 +127,7 @@
   }
 
   function save(count) {
+
     const d = document.getElementById("date").value || "";
     const sh = document.getElementById("shift").value || "";
     const sup = document.getElementById("supervisor").value || "";
@@ -145,6 +148,7 @@
 
       rows.push([d, sh, sup, c, dept, plan, act, gap, remarks, ref]);
     }
+         if (!validateMandatoryFields()) return;
 
     google.script.run.withSuccessHandler(() => {
       resetForm();
@@ -170,6 +174,26 @@
       "'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'
     })[s]);
   }
+
+  function clearForm() {
+  // reset date
+  document.getElementById("date").valueAsDate = new Date();
+
+  // re-detect shift
+  google.script.run.withSuccessHandler(shiftVal => {
+    document.getElementById("shift").value = shiftVal || "";
+  }).detectShift();
+
+  // clear supervisor & cell
+  document.getElementById("supervisor").value = "";
+  document.getElementById("cell").value = "";
+
+  // clear table
+  document.getElementById("tableArea").innerHTML = "";
+
+  // unlock fields if locked
+  unlockDropdowns();
+}
 
   function validateMandatoryFields() {
   const date = document.getElementById("date").value;
